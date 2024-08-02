@@ -1,7 +1,7 @@
 import express from "express";
 import joi from "joi";
 import {schemaValidation} from "../middleware/schemaValidation.js";
-import {addDebits} from "../controllers/debit.controller.js";
+import {addDebits} from "../controllers/debitController.js";
 
 const debitRoutes = express.Router();
 

@@ -1,7 +1,7 @@
 import express from "express";
 import joi from "joi";
 import {schemaValidation} from "../middleware/schemaValidation.js";
-import {loginUser, registerUser} from "../controllers/user.controller.js";
+import {loginUser, registerUser} from "../controllers/userController.js";
 
 const userRoutes = express.Router();
 
