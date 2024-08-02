@@ -7,7 +7,7 @@ import {
     getMonthlyCreditStatistics, getMonthlyDebitStatistics,
     getTotalStatistics,
     getWeeklyDebitStatistics, getYearlyCreditStatistics, getYearlyDebitStatistics
-} from "../controllers/statistics.controller.js";
+} from "../controllers/statisticsController.js";
 import {verifyAuthToken} from "../middleware/authVerification.js";
 
 const statisticsRoutes = express.Router();
