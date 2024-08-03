@@ -33,7 +33,8 @@ const schemas = {
         year: joi.number().required().min(2024),
     }),
     getAverageStatistics: joi.object().keys({
-        period: joi.string().required()
+        fromDate: joi.string().required(),
+        tillDate: joi.string().required(),
     }),
     getLargestTransactionAmount: joi.object().keys({
         fromDate: joi.string(),

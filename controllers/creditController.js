@@ -1,6 +1,6 @@
 import {errorAPIResponse, successAPIResponse} from "../utils/response.js";
 import {logger} from "../config/logger.js";
-import {insertCreditsData} from "../services/credit.service.js";
+import {insertCreditsData} from "../services/creditsService.js";
 
 export const addCredits = async (req, res, next) => {
     try {

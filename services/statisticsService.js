@@ -1,6 +1,6 @@
 import {logger} from "../config/logger.js";
-import CreditModel from "../models/credit.model.js";
-import DebitModel from "../models/debit.model.js";
+import CreditModel from "../models/creditModel.js";
+import DebitModel from "../models/debitModel.js";
 import moment from "moment";
 import {sortMapByDate} from "../utils/functions.js";
 
@@ -227,69 +227,38 @@ export const findYearlyDebitStatistics = async ({emailId, year}) => {
     }
 }
 
-export const findAverageStatistics = async ({emailId, period}) => {
+export const findAverageStatistics = async ({emailId, fromDate, tillDate}) => {
     try {
-        let startDate, endDate, groupBy;
-        const now = moment();
-
-        switch (period) {
-            case 'daily':
-                startDate = now.startOf('day').toDate();
-                endDate = now.endOf('day').toDate();
-                groupBy = {$dateToString: {format: "%Y-%m-%d", date: "$receivedAt"}};
-                break;
-            case 'monthly':
-                startDate = now.startOf('month').toDate();
-                endDate = now.endOf('month').toDate();
-                groupBy = {$dateToString: {format: "%Y-%m", date: "$receivedAt"}};
-                break;
-            case 'yearly':
-                startDate = now.startOf('year').toDate();
-                endDate = now.endOf('year').toDate();
-                groupBy = {$dateToString: {format: "%Y", date: "$receivedAt"}};
-                break;
-            default:
-                throw new Error('Invalid period specified');
-        }
-
         const query = {
             emailId: emailId,
-            receivedAt: {$gte: startDate, $lte: endDate}
-        };
+            receivedAt: {$gte: new Date(fromDate), $lte: new Date(tillDate)},
+        }
 
-        const creditAgg = await CreditModel.aggregate([
-            {$match: query},
-            {
-                $group: {
-                    _id: groupBy,
-                    avgCredit: {$avg: "$amount"},
-                    count: {$sum: 1}
-                }
+        const credits = await CreditModel.find(query).select('receivedAt amount').lean().exec();
+        const debits = await DebitModel.find(query).select('receivedAt amount').lean().exec();
+
+        let totalCreditAmount = 0, totalDebitAmount = 0;
+        let creditsCount = 0, debitsCount = 0;
+        credits.map((credit) => {
+            if (credit.amount > 0) {
+                totalCreditAmount += credit.amount;
+                creditsCount++;
             }
-        ]);
-
-        const debitAgg = await DebitModel.aggregate([
-            {$match: query},
-            {
-                $group: {
-                    _id: groupBy,
-                    avgDebit: {$avg: "$amount"},
-                    count: {$sum: 1}
-                }
+        });
+        debits.map((debit) => {
+            if (debit.amount > 0) {
+                totalDebitAmount += debit.amount;
+                debitsCount++;
             }
-        ]);
-
-        const avgCredit = creditAgg.length > 0 ? creditAgg[0].avgCredit : 0;
-        const avgDebit = debitAgg.length > 0 ? debitAgg[0].avgDebit : 0;
-        const creditCount = creditAgg.length > 0 ? creditAgg[0].count : 0;
-        const debitCount = debitAgg.length > 0 ? debitAgg[0].count : 0;
+        });
+        let avgCreditAmount = creditsCount > 0 ? (totalCreditAmount / creditsCount) : 0;
+        let avgDebitAmount = debitsCount > 0 ? (totalDebitAmount / debitsCount) : 0;
 
         return {
-            period,
-            averageCredit: parseFloat(avgCredit.toFixed(2)),
-            averageDebit: parseFloat(avgDebit.toFixed(2)),
-            creditTransactions: creditCount,
-            debitTransactions: debitCount
+            averageCredit: parseFloat(avgCreditAmount.toFixed(2)),
+            averageDebit: parseFloat(avgDebitAmount.toFixed(2)),
+            creditTransactions: creditsCount,
+            debitTransactions: debitsCount
         };
     } catch (e) {
         logger.error(`Error in findAverageStatistics: ${e}`);
