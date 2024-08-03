@@ -1,5 +1,5 @@
 import {logger} from "../config/logger.js";
-import CreditModel from "../models/credit.model.js";
+import CreditModel from "../models/creditModel.js";
 
 export const insertCreditsData = async ({creditsArray}) => {
     try {

@@ -4,7 +4,7 @@ import {
     findMonthlyCreditStatistics, findMonthlyDebitStatistics,
     findTotalStatistics,
     findWeeklyDebitStatistics, findYearlyCreditStatistics, findYearlyDebitStatistics
-} from "../services/statistics.service.js";
+} from "../services/statisticsService.js";
 import {errorAPIResponse, successAPIResponse} from "../utils/response.js";
 import {logger} from "../config/logger.js";
 
@@ -113,10 +113,11 @@ export const getYearlyDebitStatistics = async (req, res, next) => {
 export const getAverageStatistics = async (req, res, next) => {
     try {
         const {emailId} = req.body;
-        const {period} = req.query;
+        const {fromDate, tillDate} = req.query;
         const response = await findAverageStatistics({
             emailId: emailId,
-            period: period
+            fromDate: fromDate,
+            tillDate: tillDate
         })
         return res.status(200).json(successAPIResponse(response, true));
     } catch (e) {

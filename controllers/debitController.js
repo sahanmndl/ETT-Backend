@@ -1,4 +1,4 @@
-import {insertDebitsData} from "../services/debit.service.js";
+import {insertDebitsData} from "../services/debitsService.js";
 import {errorAPIResponse, successAPIResponse} from "../utils/response.js";
 import {logger} from "../config/logger.js";
 

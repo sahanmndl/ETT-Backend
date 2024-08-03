@@ -1,6 +1,6 @@
-import UserModel from "../models/user.model.js";
+import UserModel from "../models/userModel.js";
 import {errorAPIResponse, successAPIResponse} from "../utils/response.js";
-import {createUser, generateJWTToken} from "../services/user.service.js";
+import {createUser, generateJWTToken} from "../services/userService.js";
 import {logger} from "../config/logger.js";
 import bcrypt from "bcrypt";
 

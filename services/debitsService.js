@@ -1,5 +1,5 @@
 import {logger} from "../config/logger.js";
-import DebitModel from "../models/debit.model.js";
+import DebitModel from "../models/debitModel.js";
 
 export const insertDebitsData = async ({debitsArray}) => {
     try {
