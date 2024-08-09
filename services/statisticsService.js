@@ -1,8 +1,8 @@
 import {logger} from "../config/logger.js";
 import CreditModel from "../models/creditModel.js";
 import DebitModel from "../models/debitModel.js";
-import moment from "moment";
 import {sortMapByDate} from "../utils/functions.js";
+import {DateTime} from "luxon";
 
 export const findTotalStatistics = async ({emailId, fromDate, tillDate}) => {
     try {
@@ -34,8 +34,8 @@ export const findTotalStatistics = async ({emailId, fromDate, tillDate}) => {
 
 export const findDailyTotalStatistics = async ({emailId}) => {
     try {
-        const startDate = moment().startOf('day').toDate()
-        const endDate = moment().endOf('day').toDate()
+        const startDate = DateTime.now().startOf('day').toJSDate();
+        const endDate = DateTime.now().endOf('day', {}).toJSDate();
 
         const query = {
             emailId: emailId,
@@ -58,7 +58,7 @@ export const findDailyTotalStatistics = async ({emailId}) => {
 export const findWeeklyDebitStatistics = async ({emailId, tillDate}) => {
     try {
         const endDate = new Date(tillDate);
-        const startDate = moment(endDate).subtract(7, 'days').toDate();
+        const startDate = DateTime.fromJSDate(endDate).minus({ days: 7 }).toJSDate();
 
         const query = {
             emailId: emailId,
@@ -68,7 +68,7 @@ export const findWeeklyDebitStatistics = async ({emailId, tillDate}) => {
         const debits = await DebitModel.find(query).select('receivedAt amount').lean().exec();
 
         const debitMap = debits.reduce((map, {receivedAt, amount}) => {
-            const date = moment(new Date(receivedAt)).format('DD-MM-YYYY');
+            const date = DateTime.fromJSDate(new Date(receivedAt)).toFormat('dd-MM-yyyy');
             if (!map[date]) {
                 map[date] = 0;
             }
@@ -77,7 +77,10 @@ export const findWeeklyDebitStatistics = async ({emailId, tillDate}) => {
         }, {});
 
         const sortedDebitMap = Object.fromEntries(
-            Object.entries(debitMap).sort((a, b) => moment(a[0], 'DD-MM-YYYY') - moment(b[0], 'DD-MM-YYYY'))
+            Object.entries(debitMap).sort((a, b) =>
+                DateTime.fromFormat(a[0], 'dd-MM-yyyy').valueOf() -
+                DateTime.fromFormat(b[0], 'dd-MM-yyyy').valueOf()
+            )
         );
         let resultArray = []
         Object.entries(sortedDebitMap).map((debit, index) => {
@@ -93,18 +96,19 @@ export const findWeeklyDebitStatistics = async ({emailId, tillDate}) => {
 
 export const findMonthlyDebitStatistics = async ({emailId, year}) => {
     try {
-        const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
-        const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`);
+        const startDate = DateTime.local(year).startOf('year').toJSDate();
+        const endDate = DateTime.local(year).endOf('year', {}).toJSDate();
 
         const query = {
             emailId: emailId,
-            receivedAt: {$gte: startDate, $lte: endDate}
+            receivedAt: {$gte: startDate, $lt: endDate},
+            amount: {$gt: 0}
         };
 
         const debits = await DebitModel.find(query).select('receivedAt amount').lean().exec();
 
         const monthlyDebitsMap = debits.reduce((map, {receivedAt, amount}) => {
-            const month = moment(new Date(receivedAt)).format('YYYY-MM')
+            const month = DateTime.fromJSDate(new Date(receivedAt)).toFormat('yyyy-MM');
             if (!map[month]) {
                 map[month] = 0;
             }
@@ -127,18 +131,19 @@ export const findMonthlyDebitStatistics = async ({emailId, year}) => {
 
 export const findMonthlyCreditStatistics = async ({emailId, year}) => {
     try {
-        const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
-        const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`);
+        const startDate = DateTime.local(year).startOf('year').toJSDate();
+        const endDate = DateTime.local(year).endOf('year', {}).toJSDate();
 
         const query = {
             emailId: emailId,
-            receivedAt: {$gte: startDate, $lte: endDate}
+            receivedAt: {$gte: startDate, $lt: endDate},
+            amount: {$gt: 0}
         };
 
         const credits = await CreditModel.find(query).select('receivedAt amount').lean().exec();
 
         const monthlyCreditsMap = credits.reduce((map, {receivedAt, amount}) => {
-            const month = moment(new Date(receivedAt)).format('YYYY-MM')
+            const month = DateTime.fromJSDate(new Date(receivedAt)).toFormat('yyyy-MM');
             if (!map[month]) {
                 map[month] = 0;
             }
@@ -161,22 +166,23 @@ export const findMonthlyCreditStatistics = async ({emailId, year}) => {
 
 export const findYearlyCreditStatistics = async ({emailId, year}) => {
     try {
-        const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
-        const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`);
+        const startDate = DateTime.local(year).startOf('year').toJSDate();
+        const endDate = DateTime.local(year).endOf('year', {}).toJSDate();
 
         const query = {
             emailId: emailId,
-            receivedAt: {$gte: startDate, $lt: endDate}
+            receivedAt: {$gte: startDate, $lt: endDate},
+            amount: {$gt: 0}
         };
 
         const credits = await CreditModel.find(query).select('receivedAt amount').lean().exec();
 
         const yearlyCreditsMap = credits.reduce((map, {receivedAt, amount}) => {
-            const month = moment(new Date(receivedAt)).format('YYYY-MM-DD')
-            if (!map[month]) {
-                map[month] = 0;
+            const day = DateTime.fromJSDate(new Date(receivedAt)).toFormat('yyyy-MM-dd');
+            if (!map[day]) {
+                map[day] = 0;
             }
-            map[month] += amount;
+            map[day] += amount;
             return map;
         }, {});
 
@@ -195,22 +201,23 @@ export const findYearlyCreditStatistics = async ({emailId, year}) => {
 
 export const findYearlyDebitStatistics = async ({emailId, year}) => {
     try {
-        const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
-        const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`);
+        const startDate = DateTime.local(year).startOf('year').toJSDate();
+        const endDate = DateTime.local(year).endOf('year', {}).toJSDate();
 
         const query = {
             emailId: emailId,
-            receivedAt: {$gte: startDate, $lt: endDate}
+            receivedAt: {$gte: startDate, $lt: endDate},
+            amount: {$gt: 0}
         };
 
         const debits = await DebitModel.find(query).select('receivedAt amount').lean().exec();
 
         const yearlyDebitsMap = debits.reduce((map, {receivedAt, amount}) => {
-            const month = moment(new Date(receivedAt)).format('YYYY-MM-DD')
-            if (!map[month]) {
-                map[month] = 0;
+            const day = DateTime.fromJSDate(new Date(receivedAt)).toFormat('yyyy-MM-dd');
+            if (!map[day]) {
+                map[day] = 0;
             }
-            map[month] += amount;
+            map[day] += amount;
             return map;
         }, {});
 

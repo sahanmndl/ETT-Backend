@@ -8,11 +8,14 @@ import creditRoutes from "./routes/creditRoutes.js";
 import statisticsRoutes from "./routes/statisticsRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import pingRoutes from "./routes/pingRoutes.js";
+import helmet from "helmet";
 
 dotenv.config()
 
 const app = express();
+app.set('trust proxy', true)
 app.use(cors())
+app.use(helmet())
 app.use(express.json({limit: "30mb", extended: true}))
 
 app.use('/', pingRoutes)

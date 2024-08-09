@@ -10,6 +10,7 @@ import {logger} from "../config/logger.js";
 
 export const getTotalStatistics = async (req, res, next) => {
     try {
+        logger.info(`Entering getTotalStatistics controller with IP-Address: ${req.ip}`);
         const {emailId} = req.body;
         const {fromDate, tillDate} = req.query;
         const response = await findTotalStatistics({
