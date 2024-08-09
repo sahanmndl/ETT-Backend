@@ -11,3 +11,20 @@ export const insertDebitsData = async ({debitsArray}) => {
         throw e;
     }
 }
+
+export const insertSingleDebit = async ({emailId, subject, amount, receivedAt}) => {
+    try {
+        const response = await DebitModel.create({
+            emailId: emailId,
+            subject: subject,
+            amount: amount,
+            receivedAt: receivedAt,
+        });
+        await response.save();
+        logger.info("Successfully inserted a debit");
+        return response;
+    } catch (e) {
+        logger.error("Error inserting a debit " + e);
+        throw e;
+    }
+}

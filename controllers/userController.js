@@ -6,6 +6,8 @@ import bcrypt from "bcrypt";
 
 export const registerUser = async (req, res, next) => {
     try {
+        logger.info(`Entering registerUser controller with IP-Address: ${req.ip}`);
+        
         const {name, email, password} = req.body;
 
         const existingUser = await UserModel.findOne({email: email});
@@ -28,6 +30,8 @@ export const registerUser = async (req, res, next) => {
 
 export const loginUser = async (req, res, next) => {
     try {
+        logger.info(`Entering loginUser controller with IP-Address: ${req.ip}`);
+        
         const {email, password} = req.body;
 
         const existingUser = await UserModel.findOne({email: email});
