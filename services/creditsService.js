@@ -11,3 +11,20 @@ export const insertCreditsData = async ({creditsArray}) => {
         throw e;
     }
 }
+
+export const insertSingleCredit = async ({emailId, subject, amount, receivedAt}) => {
+    try {
+        const response = await CreditModel.create({
+            emailId: emailId,
+            subject: subject,
+            amount: amount,
+            receivedAt: receivedAt,
+        });
+        await response.save();
+        logger.info("Successfully inserted a credit");
+        return response;
+    } catch (e) {
+        logger.error("Error inserting a credit " + e);
+        throw e;
+    }
+}
