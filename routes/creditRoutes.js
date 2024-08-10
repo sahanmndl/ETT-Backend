@@ -7,8 +7,8 @@ import {verifyAuthToken} from "../middleware/authVerification.js";
 const creditRoutes = express.Router();
 
 const creditSchema = joi.object().keys({
-    emailId: joi.string().required(),
-    subject: joi.string().required(),
+    emailId: joi.string().min(1).max(255),
+    subject: joi.string().min(1).max(255).required(),
     amount: joi.number().required().min(0),
     receivedAt: joi.date().required().allow(null),
 })
