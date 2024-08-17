@@ -25,6 +25,7 @@ const schemas = {
     getAllPastDebits: joi.object().keys({
         page: joi.number().min(1).required(),
         limit: joi.number().min(25).max(100).required(),
+        timezone: joi.string().required(),
     }),
     updateDebitTransaction: joi.object().keys({
         subject: joi.string().min(1).max(255),
