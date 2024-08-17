@@ -10,11 +10,12 @@ import userRoutes from "./routes/userRoutes.js";
 import pingRoutes from "./routes/pingRoutes.js";
 import helmet from "helmet";
 import {rateLimiter} from "./config/rateLimiter.js";
+import {connectToCacheDB} from "./cache/redis.js";
 
 dotenv.config()
 
 const app = express();
-app.set('trust proxy', true)
+// app.set('trust proxy', true)
 app.use(cors())
 app.use(helmet())
 app.use(rateLimiter)
@@ -29,4 +30,5 @@ app.use('/api/v1/statistics', statisticsRoutes)
 app.listen((process.env.PORT || 8008), async () => {
     logger.info("Server is running on port " + process.env.PORT);
     await connectMongoDB()
+    await connectToCacheDB()
 })
