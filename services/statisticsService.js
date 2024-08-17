@@ -4,14 +4,16 @@ import DebitModel from "../models/debitModel.js";
 import {sortMapByDate} from "../utils/functions.js";
 import {DateTime} from "luxon";
 
-export const findTotalStatistics = async ({emailId, fromDate, tillDate}) => {
+export const findTotalStatistics = async ({emailId, fromDate, tillDate, timezone = 'UTC'}) => {
     try {
         let query = {emailId: emailId}
         if (fromDate) {
-            query.receivedAt = {...query.receivedAt, $gte: new Date(fromDate)}
+            const startDate = DateTime.fromJSDate(new Date(fromDate)).setZone(timezone).startOf('day').toJSDate();
+            query.receivedAt = {...query.receivedAt, $gte: startDate};
         }
         if (tillDate) {
-            query.receivedAt = {...query.receivedAt, $lte: new Date(tillDate)}
+            const endDate = DateTime.fromJSDate(new Date(tillDate)).setZone(timezone).endOf('day', {}).toJSDate();
+            query.receivedAt = {...query.receivedAt, $lte: endDate};
         }
 
         const credits = await CreditModel.find(query).select('amount').lean().exec()
@@ -32,10 +34,10 @@ export const findTotalStatistics = async ({emailId, fromDate, tillDate}) => {
     }
 }
 
-export const findDailyTotalStatistics = async ({emailId}) => {
+export const findDailyTotalStatistics = async ({emailId, timezone = 'UTC'}) => {
     try {
-        const startDate = DateTime.now().startOf('day').toJSDate();
-        const endDate = DateTime.now().endOf('day', {}).toJSDate();
+        const startDate = DateTime.now().setZone(timezone).startOf('day').toJSDate();
+        const endDate = DateTime.now().setZone(timezone).endOf('day', {}).toJSDate();
 
         const query = {
             emailId: emailId,
@@ -55,10 +57,10 @@ export const findDailyTotalStatistics = async ({emailId}) => {
     }
 }
 
-export const findWeeklyDebitStatistics = async ({emailId, tillDate}) => {
+export const findWeeklyDebitStatistics = async ({emailId, tillDate, timezone = 'UTC'}) => {
     try {
-        const endDate = new Date(tillDate);
-        const startDate = DateTime.fromJSDate(endDate).minus({ days: 7 }).toJSDate();
+        const endDate = DateTime.fromJSDate(new Date(tillDate)).setZone(timezone).endOf('day').toJSDate();
+        const startDate = DateTime.fromJSDate(endDate).minus({days: 7}).toJSDate();
 
         const query = {
             emailId: emailId,
@@ -68,7 +70,7 @@ export const findWeeklyDebitStatistics = async ({emailId, tillDate}) => {
         const debits = await DebitModel.find(query).select('receivedAt amount').lean().exec();
 
         const debitMap = debits.reduce((map, {receivedAt, amount}) => {
-            const date = DateTime.fromJSDate(new Date(receivedAt)).toFormat('dd-MM-yyyy');
+            const date = DateTime.fromJSDate(new Date(receivedAt)).setZone(timezone).toFormat('dd-MM-yyyy');
             if (!map[date]) {
                 map[date] = 0;
             }
@@ -78,14 +80,12 @@ export const findWeeklyDebitStatistics = async ({emailId, tillDate}) => {
 
         const sortedDebitMap = Object.fromEntries(
             Object.entries(debitMap).sort((a, b) =>
-                DateTime.fromFormat(a[0], 'dd-MM-yyyy').valueOf() -
-                DateTime.fromFormat(b[0], 'dd-MM-yyyy').valueOf()
+                DateTime.fromFormat(a[0], 'dd-MM-yyyy', {zone: timezone}).valueOf() -
+                DateTime.fromFormat(b[0], 'dd-MM-yyyy', {zone: timezone}).valueOf()
             )
         );
-        let resultArray = []
-        Object.entries(sortedDebitMap).map((debit, index) => {
-            resultArray.push({date: debit[0], amount: debit[1]})
-        })
+
+        let resultArray = Object.entries(sortedDebitMap).map(([date, amount]) => ({date, amount}));
 
         return resultArray;
     } catch (e) {
@@ -94,10 +94,10 @@ export const findWeeklyDebitStatistics = async ({emailId, tillDate}) => {
     }
 }
 
-export const findMonthlyDebitStatistics = async ({emailId, year}) => {
+export const findMonthlyDebitStatistics = async ({emailId, year, timezone = 'UTC'}) => {
     try {
-        const startDate = DateTime.local(year).startOf('year').toJSDate();
-        const endDate = DateTime.local(year).endOf('year', {}).toJSDate();
+        const startDate = DateTime.local(year).setZone(timezone).startOf('year').toJSDate();
+        const endDate = DateTime.local(year).setZone(timezone).endOf('year', {}).toJSDate();
 
         const query = {
             emailId: emailId,
@@ -108,7 +108,7 @@ export const findMonthlyDebitStatistics = async ({emailId, year}) => {
         const debits = await DebitModel.find(query).select('receivedAt amount').lean().exec();
 
         const monthlyDebitsMap = debits.reduce((map, {receivedAt, amount}) => {
-            const month = DateTime.fromJSDate(new Date(receivedAt)).toFormat('yyyy-MM');
+            const month = DateTime.fromJSDate(new Date(receivedAt)).setZone(timezone).toFormat('yyyy-MM');
             if (!map[month]) {
                 map[month] = 0;
             }
@@ -129,10 +129,10 @@ export const findMonthlyDebitStatistics = async ({emailId, year}) => {
     }
 }
 
-export const findMonthlyCreditStatistics = async ({emailId, year}) => {
+export const findMonthlyCreditStatistics = async ({emailId, year, timezone = 'UTC'}) => {
     try {
-        const startDate = DateTime.local(year).startOf('year').toJSDate();
-        const endDate = DateTime.local(year).endOf('year', {}).toJSDate();
+        const startDate = DateTime.local(year).setZone(timezone).startOf('year').toJSDate();
+        const endDate = DateTime.local(year).setZone(timezone).endOf('year', {}).toJSDate();
 
         const query = {
             emailId: emailId,
@@ -143,7 +143,7 @@ export const findMonthlyCreditStatistics = async ({emailId, year}) => {
         const credits = await CreditModel.find(query).select('receivedAt amount').lean().exec();
 
         const monthlyCreditsMap = credits.reduce((map, {receivedAt, amount}) => {
-            const month = DateTime.fromJSDate(new Date(receivedAt)).toFormat('yyyy-MM');
+            const month = DateTime.fromJSDate(new Date(receivedAt)).setZone(timezone).toFormat('yyyy-MM');
             if (!map[month]) {
                 map[month] = 0;
             }
@@ -164,10 +164,10 @@ export const findMonthlyCreditStatistics = async ({emailId, year}) => {
     }
 }
 
-export const findYearlyCreditStatistics = async ({emailId, year}) => {
+export const findYearlyCreditStatistics = async ({emailId, year, timezone = 'UTC'}) => {
     try {
-        const startDate = DateTime.local(year).startOf('year').toJSDate();
-        const endDate = DateTime.local(year).endOf('year', {}).toJSDate();
+        const startDate = DateTime.local(year).setZone(timezone).startOf('year').toJSDate();
+        const endDate = DateTime.local(year).setZone(timezone).endOf('year', {}).toJSDate();
 
         const query = {
             emailId: emailId,
@@ -178,7 +178,7 @@ export const findYearlyCreditStatistics = async ({emailId, year}) => {
         const credits = await CreditModel.find(query).select('receivedAt amount').lean().exec();
 
         const yearlyCreditsMap = credits.reduce((map, {receivedAt, amount}) => {
-            const day = DateTime.fromJSDate(new Date(receivedAt)).toFormat('yyyy-MM-dd');
+            const day = DateTime.fromJSDate(new Date(receivedAt)).setZone(timezone).toFormat('yyyy-MM-dd');
             if (!map[day]) {
                 map[day] = 0;
             }
@@ -199,10 +199,10 @@ export const findYearlyCreditStatistics = async ({emailId, year}) => {
     }
 }
 
-export const findYearlyDebitStatistics = async ({emailId, year}) => {
+export const findYearlyDebitStatistics = async ({emailId, year, timezone = 'UTC'}) => {
     try {
-        const startDate = DateTime.local(year).startOf('year').toJSDate();
-        const endDate = DateTime.local(year).endOf('year', {}).toJSDate();
+        const startDate = DateTime.local(year).setZone(timezone).startOf('year').toJSDate();
+        const endDate = DateTime.local(year).setZone(timezone).endOf('year', {}).toJSDate();
 
         const query = {
             emailId: emailId,
@@ -213,7 +213,7 @@ export const findYearlyDebitStatistics = async ({emailId, year}) => {
         const debits = await DebitModel.find(query).select('receivedAt amount').lean().exec();
 
         const yearlyDebitsMap = debits.reduce((map, {receivedAt, amount}) => {
-            const day = DateTime.fromJSDate(new Date(receivedAt)).toFormat('yyyy-MM-dd');
+            const day = DateTime.fromJSDate(new Date(receivedAt)).setZone(timezone).toFormat('yyyy-MM-dd');
             if (!map[day]) {
                 map[day] = 0;
             }
@@ -234,11 +234,14 @@ export const findYearlyDebitStatistics = async ({emailId, year}) => {
     }
 }
 
-export const findAverageStatistics = async ({emailId, fromDate, tillDate}) => {
+export const findAverageStatistics = async ({emailId, fromDate, tillDate, timezone = 'UTC'}) => {
     try {
+        const startDate = DateTime.fromJSDate(new Date(fromDate)).setZone(timezone).startOf('day').toJSDate();
+        const endDate = DateTime.fromJSDate(new Date(tillDate)).setZone(timezone).endOf('day', {}).toJSDate();
+
         const query = {
             emailId: emailId,
-            receivedAt: {$gte: new Date(fromDate), $lte: new Date(tillDate)},
+            receivedAt: {$gte: startDate, $lte: endDate},
         }
 
         const credits = await CreditModel.find(query).select('receivedAt amount').lean().exec();
@@ -246,13 +249,13 @@ export const findAverageStatistics = async ({emailId, fromDate, tillDate}) => {
 
         let totalCreditAmount = 0, totalDebitAmount = 0;
         let creditsCount = 0, debitsCount = 0;
-        credits.map((credit) => {
+        credits.forEach((credit) => {
             if (credit.amount > 0) {
                 totalCreditAmount += credit.amount;
                 creditsCount++;
             }
         });
-        debits.map((debit) => {
+        debits.forEach((debit) => {
             if (debit.amount > 0) {
                 totalDebitAmount += debit.amount;
                 debitsCount++;
@@ -273,11 +276,17 @@ export const findAverageStatistics = async ({emailId, fromDate, tillDate}) => {
     }
 };
 
-export const findLargestTransactions = async ({emailId, fromDate, tillDate}) => {
+export const findLargestTransactions = async ({emailId, fromDate, tillDate, timezone = 'UTC'}) => {
     try {
         const query = {emailId};
-        if (fromDate) query.receivedAt = {...query.receivedAt, $gte: new Date(fromDate)};
-        if (tillDate) query.receivedAt = {...query.receivedAt, $lte: new Date(tillDate)};
+        if (fromDate) {
+            const startDate = DateTime.fromJSDate(new Date(fromDate)).setZone(timezone).startOf('day').toJSDate();
+            query.receivedAt = {...query.receivedAt, $gte: startDate};
+        }
+        if (tillDate) {
+            const endDate = DateTime.fromJSDate(new Date(tillDate)).setZone(timezone).endOf('day', {}).toJSDate();
+            query.receivedAt = {...query.receivedAt, $lte: endDate};
+        }
 
         const [maxCredit] = await CreditModel.find(query)
             .sort({amount: -1})

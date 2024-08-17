@@ -11,13 +11,14 @@ import {logger} from "../config/logger.js";
 export const getTotalStatistics = async (req, res, next) => {
     try {
         logger.info(`Entering getTotalStatistics controller with IP-Address: ${req.ip}`);
-        
+
         const {emailId} = req.body;
-        const {fromDate, tillDate} = req.query;
+        const {fromDate, tillDate, timezone} = req.query;
         const response = await findTotalStatistics({
             emailId: emailId,
             fromDate: fromDate,
-            tillDate: tillDate
+            tillDate: tillDate,
+            timezone: timezone
         })
         return res.status(200).json(successAPIResponse(response, true));
     } catch (e) {
@@ -29,7 +30,11 @@ export const getTotalStatistics = async (req, res, next) => {
 export const getDailyTotalStatistics = async (req, res, next) => {
     try {
         const {emailId} = req.body;
-        const response = await findDailyTotalStatistics({emailId: emailId})
+        const {timezone} = req.query;
+        const response = await findDailyTotalStatistics({
+            emailId: emailId,
+            timezone: timezone
+        })
         return res.status(200).json(successAPIResponse(response, true));
     } catch (e) {
         logger.error("Error in getDailyTotalStatistics controller " + e);
@@ -40,10 +45,11 @@ export const getDailyTotalStatistics = async (req, res, next) => {
 export const getWeeklyDebitStatistics = async (req, res, next) => {
     try {
         const {emailId} = req.body;
-        const {tillDate} = req.query;
+        const {tillDate, timezone} = req.query;
         const response = await findWeeklyDebitStatistics({
             emailId: emailId,
-            tillDate: tillDate
+            tillDate: tillDate,
+            timezone: timezone
         })
         return res.status(200).json(successAPIResponse(response, true));
     } catch (e) {
@@ -55,10 +61,11 @@ export const getWeeklyDebitStatistics = async (req, res, next) => {
 export const getMonthlyDebitStatistics = async (req, res, next) => {
     try {
         const {emailId} = req.body;
-        const {year} = req.query;
+        const {year, timezone} = req.query;
         const response = await findMonthlyDebitStatistics({
             emailId: emailId,
             year: parseInt(year),
+            timezone: timezone
         })
         return res.status(200).json(successAPIResponse(response, true));
     } catch (e) {
@@ -70,10 +77,11 @@ export const getMonthlyDebitStatistics = async (req, res, next) => {
 export const getMonthlyCreditStatistics = async (req, res, next) => {
     try {
         const {emailId} = req.body;
-        const {year} = req.query;
+        const {year, timezone} = req.query;
         const response = await findMonthlyCreditStatistics({
             emailId: emailId,
             year: parseInt(year),
+            timezone: timezone
         })
         return res.status(200).json(successAPIResponse(response, true));
     } catch (e) {
@@ -85,10 +93,11 @@ export const getMonthlyCreditStatistics = async (req, res, next) => {
 export const getYearlyCreditStatistics = async (req, res, next) => {
     try {
         const {emailId} = req.body;
-        const {year} = req.query;
+        const {year, timezone} = req.query;
         const response = await findYearlyCreditStatistics({
             emailId: emailId,
             year: parseInt(year),
+            timezone: timezone
         })
         return res.status(200).json(successAPIResponse(response, true));
     } catch (e) {
@@ -100,10 +109,11 @@ export const getYearlyCreditStatistics = async (req, res, next) => {
 export const getYearlyDebitStatistics = async (req, res, next) => {
     try {
         const {emailId} = req.body;
-        const {year} = req.query;
+        const {year, timezone} = req.query;
         const response = await findYearlyDebitStatistics({
             emailId: emailId,
             year: parseInt(year),
+            timezone: timezone
         })
         return res.status(200).json(successAPIResponse(response, true));
     } catch (e) {
@@ -115,11 +125,12 @@ export const getYearlyDebitStatistics = async (req, res, next) => {
 export const getAverageStatistics = async (req, res, next) => {
     try {
         const {emailId} = req.body;
-        const {fromDate, tillDate} = req.query;
+        const {fromDate, tillDate, timezone} = req.query;
         const response = await findAverageStatistics({
             emailId: emailId,
             fromDate: fromDate,
-            tillDate: tillDate
+            tillDate: tillDate,
+            timezone: timezone
         })
         return res.status(200).json(successAPIResponse(response, true));
     } catch (e) {
@@ -131,11 +142,12 @@ export const getAverageStatistics = async (req, res, next) => {
 export const getLargestTransactionAmount = async (req, res, next) => {
     try {
         const {emailId} = req.body;
-        const {fromDate, tillDate} = req.query;
+        const {fromDate, tillDate, timezone} = req.query;
         const response = await findLargestTransactions({
             emailId: emailId,
             fromDate: fromDate,
-            tillDate: tillDate
+            tillDate: tillDate,
+            timezone: timezone
         })
         return res.status(200).json(successAPIResponse(response, true));
     } catch (e) {
