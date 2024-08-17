@@ -44,11 +44,12 @@ export const addSingleDebit = async (req, res, next) => {
 export const getAllPastDebits = async (req, res, next) => {
     try {
         const {emailId} = req.body;
-        const {page, limit} = req.query;
+        const {page, limit, timezone} = req.query;
         const response = await fetchAllPastDebits({
             emailId: emailId,
             page: parseInt(page) || 1,
-            limit: parseInt(limit) || 25
+            limit: parseInt(limit) || 25,
+            timezone: timezone
         })
         return res.status(200).json(successAPIResponse(response, true));
     } catch (e) {

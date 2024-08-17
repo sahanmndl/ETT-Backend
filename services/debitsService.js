@@ -2,6 +2,7 @@ import {logger} from "../config/logger.js";
 import DebitModel from "../models/debitModel.js";
 import {getDataFromCache, setDataInCache} from "../cache/redis.js";
 import {cacheTTL} from "../utils/constants.js";
+import {DateTime} from "luxon";
 
 export const insertDebitsData = async ({debitsArray}) => {
     try {
@@ -31,7 +32,7 @@ export const insertSingleDebit = async ({emailId, subject, amount, receivedAt}) 
     }
 }
 
-export const fetchAllPastDebits = async ({emailId, page, limit}) => {
+export const fetchAllPastDebits = async ({emailId, page, limit, timezone = 'UTC'}) => {
     try {
         const skip = (page - 1) * limit;
         const debits = await DebitModel.find({
@@ -45,7 +46,10 @@ export const fetchAllPastDebits = async ({emailId, page, limit}) => {
             .exec();
 
         const hasMore = debits.length > limit;
-        const result = debits.slice(0, limit)
+        const result = debits.slice(0, limit).map((debit) => {
+            const date = DateTime.fromJSDate(new Date(debit?.receivedAt)).setZone(timezone).toFormat('dd/MM/yyyy hh:mm a');
+            return {...debit, receivedAt: date};
+        })
 
         const cacheKey = `DEBITS_COUNT_${emailId}`
         let count = parseFloat(await getDataFromCache(cacheKey))
