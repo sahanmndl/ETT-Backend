@@ -19,7 +19,7 @@ app.set('trust proxy', true)
 app.get('/ip', (request, response) => response.send(request.ip))
 app.use(cors())
 app.use(helmet())
-app.use(rateLimiter)
+// app.use(rateLimiter)
 app.use(express.json({limit: "30mb", extended: true}))
 
 app.use('/', pingRoutes)
