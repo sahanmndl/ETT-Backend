@@ -77,7 +77,8 @@ export const updateDebitTransaction = async (req, res, next) => {
 export const deleteDebitTransaction = async (req, res, next) => {
     try {
         const {debitId} = req.params;
-        const response = await deleteDebitById({debitId: debitId})
+        const {emailId} = req.body;
+        const response = await deleteDebitById({debitId: debitId, emailId: emailId})
         return res.status(200).json(successAPIResponse(response, true));
     } catch (e) {
         logger.error("Error in deleteDebitTransaction controller " + e);
