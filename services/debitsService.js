@@ -4,9 +4,13 @@ import {getDataFromCache, setDataInCache} from "../cache/redis.js";
 import {cacheTTL} from "../utils/constants.js";
 import {DateTime} from "luxon";
 
-export const insertDebitsData = async ({debitsArray}) => {
+export const insertDebitsData = async ({debitsArray = []}) => {
     try {
         const response = await DebitModel.insertMany(debitsArray);
+        if (debitsArray.length > 0) {
+            const emailId = debitsArray[0].emailId;
+            await updateDebitCacheCount(emailId, debitsArray.length);
+        }
         logger.info("Successfully inserted debits");
         return response;
     } catch (e) {
@@ -24,6 +28,7 @@ export const insertSingleDebit = async ({emailId, subject, amount, receivedAt}) 
             receivedAt: receivedAt,
         });
         await response.save();
+        await updateDebitCacheCount(emailId, 1);
         logger.info("Successfully inserted a debit");
         return response;
     } catch (e) {
@@ -51,12 +56,7 @@ export const fetchAllPastDebits = async ({emailId, page, limit, timezone = 'UTC'
             return {...debit, receivedAt: date};
         })
 
-        const cacheKey = `DEBITS_COUNT_${emailId}`
-        let count = parseFloat(await getDataFromCache(cacheKey))
-        if (!count) {
-            count = await DebitModel.countDocuments({emailId: emailId});
-            await setDataInCache(cacheKey, cacheTTL.TRANSACTIONS_COUNT, count)
-        }
+        const count = updateDebitCacheCount(emailId);
 
         return {
             debits: result,
@@ -89,11 +89,32 @@ export const updateDebit = async ({debitId, subject, amount}) => {
     }
 }
 
-export const deleteDebitById = async ({debitId}) => {
+export const deleteDebitById = async ({debitId, emailId}) => {
     try {
-        return await DebitModel.findByIdAndDelete(debitId).lean().exec();
+        const deletedDebit = await DebitModel.findByIdAndDelete(debitId).lean().exec();
+        await updateDebitCacheCount(emailId, -1);
+        return deletedDebit;
     } catch (e) {
         logger.error(`Error in deleteDebitById: ${e}`);
         throw e;
+    }
+}
+
+export const updateDebitCacheCount = async (emailId, value = 0) => {
+    try {
+        const cacheKey = `DEBITS_COUNT_${emailId}`
+        let count = parseFloat(await getDataFromCache(cacheKey))
+        if (!count) {
+            count = await DebitModel.countDocuments({emailId: emailId});
+            await setDataInCache(cacheKey, cacheTTL.TRANSACTIONS_COUNT, count);
+        }
+        if (value !== 0) {
+            count += value;
+            await setDataInCache(cacheKey, cacheTTL.TRANSACTIONS_COUNT, count);
+        }
+        logger.info(`Debit cache count has been updated for ${emailId}:`, count);
+        return count;
+    } catch (e) {
+        logger.error(`Error in updateDebitCacheInfo: ${e}`);
     }
 }
