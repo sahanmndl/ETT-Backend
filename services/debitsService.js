@@ -56,7 +56,7 @@ export const fetchAllPastDebits = async ({emailId, page, limit, timezone = 'UTC'
             return {...debit, receivedAt: date};
         })
 
-        const count = updateDebitCacheCount(emailId);
+        const count = await updateDebitCacheCount(emailId);
 
         return {
             debits: result,
@@ -112,7 +112,7 @@ export const updateDebitCacheCount = async (emailId, value = 0) => {
             count += value;
             await setDataInCache(cacheKey, cacheTTL.TRANSACTIONS_COUNT, count);
         }
-        logger.info(`Debit cache count has been updated for ${emailId}:`, count);
+        logger.info(`Debit cache count has been updated for ${emailId}: ${count}`);
         return count;
     } catch (e) {
         logger.error(`Error in updateDebitCacheInfo: ${e}`);
